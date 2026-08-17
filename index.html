@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>淘工厂单品利润测算表</title>
+<style>
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f6fa;margin:0;padding:16px;color:#222}
+  .card{max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  h1{font-size:20px;text-align:center;margin:0 0 4px}
+  .sub{font-size:12px;color:#888;text-align:center;margin-bottom:16px}
+  .row{display:flex;justify-content:space-between;align-items:center;margin:10px 0;font-size:14px}
+  .row label{flex:1}
+  .row input{width:110px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:14px;text-align:right}
+  .sec{font-size:13px;font-weight:bold;color:#e67e22;margin:16px 0 6px;border-left:3px solid #e67e22;padding-left:8px}
+  .out{background:#fafafa;border-radius:8px;padding:4px 12px}
+  .out .row{margin:8px 0}
+  .val{font-weight:bold}
+  .good{color:#27ae60}.warn{color:#e67e22}.bad{color:#e74c3c}
+  .verdict{margin-top:16px;padding:14px;border-radius:8px;text-align:center;font-size:15px;font-weight:bold}
+  .note{font-size:11px;color:#999;margin-top:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>淘工厂单品利润测算表</h1>
+<div class="sub">0服务费·纯分润模式专用 ｜ 填数字自动出结果</div>
+
+<div class="sec">① 成本信息（工厂填，元/件）</div>
+<div class="row"><label>产品成本（出厂价）</label><input id="cost" type="number" value="10"></div>
+<div class="row"><label>快递费（元/件）</label><input id="ship" type="number" value="3"></div>
+<div class="row"><label>包装耗材（元/件）</label><input id="pack" type="number" value="1"></div>
+
+<div class="sec">② 销售设置（元/件）</div>
+<div class="row"><label>计划售价</label><input id="price" type="number" value="19.9"></div>
+<div class="row"><label>预估退货率（%）</label><input id="refRate" type="number" value="10"></div>
+<div class="row"><label>单件退货损失（元）</label><input id="refLoss" type="number" value="6"></div>
+<div class="row"><label>推广费占比（销售额%）</label><input id="adsRate" type="number" value="10"></div>
+
+<div class="sec">③ 平台费用（可按类目调）</div>
+<div class="row"><label>平台扣点率（%，类目2~5）</label><input id="feeRate" type="number" value="5"></div>
+<div class="row"><label>支付及其他费率（%）</label><input id="otherRate" type="number" value="1"></div>
+
+<div class="sec">④ 月度预估与分润</div>
+<div class="row"><label>预估月销量（件）</label><input id="sales" type="number" value="3000"></div>
+<div class="row"><label>工厂分润比例（%）</label><input id="split" type="number" value="50"></div>
+
+<div class="sec">⑤ 自动计算结果</div>
+<div class="out">
+<div class="row"><label>单件毛利</label><span class="val" id="gross">-</span></div>
+<div class="row"><label>毛利率</label><span class="val" id="grossRate">-</span></div>
+<div class="row"><label>单件净利（扣完所有费用）</label><span class="val" id="net">-</span></div>
+<div class="row"><label>净利率</label><span class="val" id="netRate">-</span></div>
+<div class="row"><label>做到20%净利率的最低售价</label><span class="val" id="minPrice">-</span></div>
+<div class="row"><label>月净利润</label><span class="val" id="monthNet">-</span></div>
+<div class="row"><label>工厂月分润</label><span class="val good" id="facShare">-</span></div>
+<div class="row"><label>团队月分润</label><span class="val" id="teamShare">-</span></div>
+</div>
+<div class="verdict" id="verdict">-</div>
+<div class="note">说明：单件净利 = 售价 − 成本 − 快递 − 包装 − 平台扣点 − 推广费 − 退货损耗（退货率×单件退货损失）− 其他费用。扣点率因类目2%~5%不等，按实际调整；测算结果仅供决策参考。</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const n=id=>parseFloat($(id).value)||0;
+function calc(){
+ const cost=n('cost'),ship=n('ship'),pack=n('pack'),price=n('price');
+ const refRate=n('refRate')/100,refLoss=n('refLoss'),ads=n('adsRate')/100;
+ const fee=n('feeRate')/100,other=n('otherRate')/100;
+ const sales=n('sales'),split=n('split')/100;
+ if(price<=0)return;
+ const gross=price-cost-ship-pack;
+ const net=gross-price*fee-price*ads-price*other-refRate*refLoss;
+ const netRate=net/price;
+ const minPrice=(cost+ship+pack+refRate*refLoss)/(1-fee-ads-other-0.2);
+ $('gross').textContent=gross.toFixed(2)+' 元';
+ $('grossRate').textContent=(gross/price*100).toFixed(1)+'%';
+ $('net').textContent=net.toFixed(2)+' 元';
+ $('netRate').textContent=(netRate*100).toFixed(1)+'%';
+ $('minPrice').textContent=(isFinite(minPrice)&&minPrice>0)?minPrice.toFixed(2)+' 元':'-';
+ $('monthNet').textContent=(net*sales).toFixed(0)+' 元';
+ $('facShare').textContent=(net*sales*split).toFixed(0)+' 元';
+ $('teamShare').textContent=(net*sales*(1-split)).toFixed(0)+' 元';
+ const v=$('verdict');
+ if(netRate>=0.2){v.textContent='✅ 优质品：净利率≥20%，建议接';v.style.background='#eafaf1'}
+ else if(netRate>=0.1){v.textContent='⚠️ 谨慎品：净利率10~20%，需优化价格或成本';v.style.background='#fef5e7'}
+ else{v.textContent='❌ 不建议：净利率<10%，利润空间不足';v.style.background='#fdedec'}
+}
+document.querySelectorAll('input').forEach(i=>i.addEventListener('input',calc));
+calc();
+</script>
+</body>
+</html>
